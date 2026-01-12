@@ -1,0 +1,178 @@
+import speech_recognition as sr
+import pyttsx3
+import datetime
+import webbrowser
+import requests
+import time
+import wikipedia
+
+# Initialize engines
+engine = pyttsx3.init()
+recognizer = sr.Recognizer()
+
+def speak(text):
+    print("Assistant:", text)
+    engine.say(text)
+    engine.runAndWait()
+
+def listen():
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+        try:
+            print("Listening...")
+            audio = recognizer.listen(
+                source,
+                timeout=5,              # waits max 5 seconds for speech
+                phrase_time_limit=7     # max length of speech
+            )
+        except sr.WaitTimeoutError:
+            speak("I did not hear anything")
+            return ""
+
+    try:
+        command = recognizer.recognize_google(audio)
+        print("You:", command)
+        return command.lower()
+
+    except sr.UnknownValueError:
+        speak("Sorry, I could not understand")
+        return ""
+
+    except sr.RequestError:
+        speak("Network error")
+        return ""
+
+
+# ---------- FEATURES ----------
+
+def tell_time():
+    speak(f"The time is {datetime.datetime.now().strftime('%H:%M')}")
+
+def tell_date():
+    speak(f"Today's date is {datetime.datetime.now().strftime('%d %B %Y')}")
+
+def weather_update(city_input):
+    try:
+        # Clean city input
+        city = city_input.lower()
+        city = city.replace("weather in", "")
+        city = city.replace("in", "")
+        city = city.replace("today", "")
+        city = city.strip()
+
+        if city == "":
+            speak("Please tell me a city name")
+            return
+
+        url = (
+            "https://api.openweathermap.org/data/2.5/weather"
+            f"?q={city}&appid=AIzaSyCj2R8cOg_y_I5FxsKcJ72a7MsjAM117ZI&units=metric"
+        )
+
+        response = requests.get(url)
+        data = response.json()
+
+        if data.get("cod") != 200:
+            speak("I could not find weather for that location. Please try a city name.")
+            return
+
+        temp = data["main"]["temp"]
+        desc = data["weather"][0]["description"]
+
+        speak(f"The weather in {city.title()} is {temp} degree Celsius with {desc}")
+
+    except:
+        speak("Weather service is temporarily unavailable")
+
+
+def set_reminder():
+    speak("Tell me the reminder message")
+    message = listen()
+    speak("Tell me reminder time in seconds")
+    try:
+        seconds = int(input("Enter seconds manually: "))
+        speak("Reminder set successfully")
+        time.sleep(seconds)
+        speak(f"Reminder: {message}")
+    except:
+        speak("Invalid reminder time")
+
+def smart_device_control(command):
+    if "light" in command:
+        speak("Smart light turned on")
+    elif "fan" in command:
+        speak("Smart fan turned off")
+    else:
+        speak("Smart device command executed")
+
+def general_knowledge(command):
+    try:
+        # Remove question words
+        ignore_words = ["who is", "what is", "tell me about", "define", "explain"]
+        topic = command.lower()
+
+        for word in ignore_words:
+            topic = topic.replace(word, "")
+
+        topic = topic.strip()
+
+        if topic == "":
+            speak("Please ask a clear question")
+            return
+
+        answer = wikipedia.summary(topic, sentences=2)
+        speak(answer)
+
+    except wikipedia.exceptions.DisambiguationError as e:
+        speak(f"The topic is unclear. Here is one option: {e.options[0]}")
+
+    except wikipedia.exceptions.PageError:
+        speak("I could not find information on that topic")
+
+    except:
+        speak("Sorry, I could not answer that question")
+
+
+# ---------- MAIN LOGIC ----------
+
+def process_command(command):
+
+    if any(word in command for word in ["time", "clock"]):
+        tell_time()
+
+    elif "date" in command:
+        tell_date()
+
+    elif "weather" in command:
+        speak("Which city?")
+        city = listen()
+        weather_update(city)
+
+    elif "reminder" in command or "alarm" in command:
+        set_reminder()
+
+    elif any(word in command for word in ["light", "fan", "device"]):
+        smart_device_control(command)
+
+    elif any(word in command for word in ["who", "what", "when", "where", "tell me about"]):
+        general_knowledge(command)
+
+    elif "search" in command:
+        webbrowser.open(f"https://www.google.com/search?q={command}")
+        speak("Here is what I found on the web")
+
+    elif "exit" in command or "stop" in command:
+        speak("Goodbye")
+        exit()
+
+    else:
+        speak("I am listening. Please say a valid command.")
+
+# ---------- START ASSISTANT ----------
+
+speak("Advanced Assistant Activated")
+
+while True:
+    cmd = listen()
+    if cmd:
+        process_command(cmd)

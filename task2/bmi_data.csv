@@ -1,0 +1,11 @@
+Name,Weight,Height,BMI,Category,Date
+Anita,48,1.55,19.97,Normal,2024-11-01
+Anita,50,1.55,20.81,Normal,2024-12-01
+Anita,52,1.55,21.64,Normal,2025-01-01
+Rahul,72,1.70,24.91,Normal,2024-11-05
+Rahul,75,1.70,25.95,Overweight,2024-12-05
+Rahul,78,1.70,26.99,Overweight,2025-01-05
+Meena,42,1.50,18.67,Normal,2024-10-15
+Meena,40,1.50,17.78,Underweight,2024-12-15
+Arjun,85,1.75,27.76,Overweight,2024-11-20
+Arjun,90,1.75,29.39,Overweight,2025-01-20
